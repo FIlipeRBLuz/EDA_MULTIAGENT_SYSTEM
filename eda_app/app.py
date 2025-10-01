@@ -216,16 +216,19 @@ col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
 with col1:
 
-    image_path = "image/einstein.jpg"  # Corrija o nome se necessário
+    image_path = "/workspaces/EDA_MULTIAGENT_SYSTEM/eda_app/image/eistein_.jpg"  # Corrija o nome se necessário
 
     if os.path.exists(image_path):
         try:
             img = Image.open(image_path)
-            st.image(img, use_container_width=True)
+            st.image(img, width=120)
         except Exception as e:
             st.error(f"Erro ao abrir a imagem: {str(e)}")
     else:
-        st.warning(f"Imagem não encontrada: {image_path}")
+        image_path = "image/eistein_.jpg"
+        img = Image.open(image_path)
+        st.image(img, width=120)
+        #st.warning(f"Imagem não encontrada: {image_path}")
 
     #st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
 
