@@ -3,11 +3,11 @@ import pandas as pd
 from agents.crews.eda_crew import create_eda_crew
 import os
 from datetime import datetime
-import os
 import re
 import base64
 import pdfkit
 from markdown import markdown
+from PIL import Image
 
 
 image = "image/eistein_.jpg"
@@ -215,7 +215,19 @@ def read_csv_robust(file_path):
 col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
 with col1:
-    st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
+
+    image_path = "image/einstein.jpg"  # Corrija o nome se necessário
+
+    if os.path.exists(image_path):
+        try:
+            img = Image.open(image_path)
+            st.image(img, use_container_width=True)
+        except Exception as e:
+            st.error(f"Erro ao abrir a imagem: {str(e)}")
+    else:
+        st.warning(f"Imagem não encontrada: {image_path}")
+
+    #st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
 
 with col2:
     st.title('Einstein Agents - Exploratory Data Analyse')  # Pode usar qualquer nível de título
