@@ -225,7 +225,7 @@ with col1:
         except Exception as e:
             st.error(f"Erro ao abrir a imagem: {str(e)}")
     else:
-        image_path = ".eda_app/image/eistein_.jpg"
+        image_path = "/mount/src/eda_multiagent_sistem/eda_app/image/eistein_.jpg"
         img = Image.open(image_path)
         st.image(img, width=120)
         #st.warning(f"Imagem não encontrada: {image_path}")
