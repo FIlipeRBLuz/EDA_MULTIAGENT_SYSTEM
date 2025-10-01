@@ -1,7 +1,10 @@
 import os
 import openai
+import streamlit as st
 
 gen = os.getenv("OPENAI_KEY_API")
+if gen is None:
+    gen = st.secrets["OPENAI_API_KEY"]
 
 openai.api_key = gen
 

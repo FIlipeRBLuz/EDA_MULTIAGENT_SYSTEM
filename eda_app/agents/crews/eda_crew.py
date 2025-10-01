@@ -5,10 +5,13 @@ from crewai.memory.storage.ltm_sqlite_storage import LTMSQLiteStorage
 import os
 from ..tools.eda_tools import describe_data, plot_distributions, plot_correlations, detect_outliers, create_custom_chart
 from dotenv import load_dotenv
-
+import streamlit as st
 
 load_dotenv()
-gen = os.getenv("OPENAI_API_KEY")
+
+gen = os.getenv("OPENAI_KEY_API")
+if gen is None:
+    gen = st.secrets["OPENAI_API_KEY"]
 
 # Configurar o modelo LLM
 llm = LLM(model="gpt-4.1-mini",api_key=gen)
