@@ -98,13 +98,13 @@ def read_csv_robust(file_path):
                 df = pd.read_csv(file_path, sep=separator, encoding=encoding)
                 # Verificar se a leitura foi bem-sucedida (mais de 1 coluna)
                 if len(df.columns) > 1:
-                    return df, separator, encoding
+                    return df
             except:
                 continue
         
         # Se tudo falhar, tentar com parâmetros padrão
         df = pd.read_csv(file_path)
-        return df, ',', 'utf-8'
+        return df
         
     except Exception as e:
         st.error(f"Erro ao ler o arquivo CSV: {str(e)}")
