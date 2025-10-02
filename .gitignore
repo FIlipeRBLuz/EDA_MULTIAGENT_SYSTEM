@@ -1,3 +1,5 @@
 teste.ipynb
 .env
 venv
+app_old.py
+.streamlit
