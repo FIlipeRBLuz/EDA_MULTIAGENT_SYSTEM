@@ -301,7 +301,7 @@ def run_eda_analysis(csv_filename: str, question: str) -> str:
         
         # Verificar se é um arquivo CSV válido
         try:
-            df = pd.read_csv(file_path)
+            df = read_csv_robust(file_path)
             rows, cols = df.shape
         except Exception as e:
             return json.dumps({
@@ -541,7 +541,7 @@ with st.sidebar:
         st.success(f"✅ Arquivo carregado: {uploaded_file.name}")
         
         try:
-            df = pd.read_csv_robust(file_path)
+            df = read_csv_robust(file_path)
             st.subheader("📊 Preview dos Dados")
             st.dataframe(df.head(), use_container_width=True)
             st.info(f"**Dimensões:** {df.shape[0]} linhas × {df.shape[1]} colunas")
