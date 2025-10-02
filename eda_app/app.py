@@ -483,14 +483,19 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         except Exception as e2:
             return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
+col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
-image = "image/eistein_.jpg"
-st.image(image, use_container_width=True)
+image = "eda_app/image/eistein_.jpg"
+with col1:
+    st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
+
+with col2:
+    st.title("Einstein Data Scientist - Chat")
 
 # Configurar a página
 st.set_page_config(
-    page_title="Einstein Data Scientist - Chat",
-    page_icon="🧠",
+    # page_title="Einstein Data Scientist - Chat",
+    # page_icon="🧠",
     layout="wide"
 )
 
