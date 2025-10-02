@@ -494,8 +494,8 @@ with col2:
 
 # Configurar a página
 st.set_page_config(
-    # page_title="Einstein Data Scientist - Chat",
-    # page_icon="🧠",
+    page_title="Einstein Data Scientist - Chat",
+    page_icon="🧠",
     layout="wide"
 )
 
@@ -516,7 +516,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título
-st.title("🧠 Einstein Data Scientist")
+# st.title("🧠 Einstein Data Scientist")
 st.markdown("*Converse com o agente sobre seus dados*")
 
 # Sidebar
