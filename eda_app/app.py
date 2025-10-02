@@ -460,7 +460,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "storage/conversations.db")
+        session = SQLiteSession(session_id, "eda_app/storage/conversacional/conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
@@ -485,9 +485,23 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
 
 col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
-image = "eda_app/image/eistein_.jpg"
+primary_path = "eda_app/image/eistein_.jpg"
+fallback_path = "image/eistein_.jpg"
+
+# Verifica qual existe
+if os.path.exists(primary_path):
+    image = primary_path
+elif os.path.exists(fallback_path):
+    image = fallback_path
+else:
+    image = None  # ou um placeholder padrão
+
+
 with col1:
-    st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
+    if image:
+        st.image(image, caption="Einstein", use_container_width=True)
+    else:
+        st.warning("Imagem não encontrada em nenhum dos diretórios.")
 
 with col2:
     st.title("Einstein Data Scientist - Chat")
