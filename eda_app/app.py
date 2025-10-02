@@ -516,7 +516,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título
-st.title("🧠 Einstein Data Scientist")
+# st.title("🧠 Einstein Data Scientist")
 st.markdown("*Converse com o agente sobre seus dados*")
 
 # Sidebar
