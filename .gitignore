@@ -3,4 +3,4 @@ teste.ipynb
 venv
 app_old.py
 .streamlit
-/agents
+eda_app/agents
