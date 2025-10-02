@@ -51,6 +51,65 @@ if "eda_running" not in st.session_state:
 if "eda_markdown" not in st.session_state:
     st.session_state.eda_markdown = None
 
+def detect_csv_separator(file_path):
+    """Detecta automaticamente o separador de um arquivo CSV"""
+    import csv
+    
+    # Lista de separadores comuns para testar
+    separators = [',', ';', '\t', '|', ':', ' ']
+    
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+        # Ler as primeiras linhas para análise
+        sample = file.read(1024)
+        file.seek(0)
+        
+        # Usar o Sniffer do CSV para detectar o separador
+        try:
+            sniffer = csv.Sniffer()
+            delimiter = sniffer.sniff(sample, delimiters=',;\t|: ').delimiter
+            return delimiter
+        except:
+            # Se o Sniffer falhar, testar manualmente
+            first_line = file.readline()
+            
+            # Contar ocorrências de cada separador
+            separator_counts = {}
+            for sep in separators:
+                separator_counts[sep] = first_line.count(sep)
+            
+            # Retornar o separador mais comum (que não seja espaço se houver outros)
+            most_common = max(separator_counts.items(), key=lambda x: x[1])
+            if most_common[1] > 0:
+                return most_common[0]
+            else:
+                return ','  # Default para vírgula
+
+def read_csv_robust(file_path):
+    """Lê um arquivo CSV de forma robusta, detectando automaticamente o separador"""
+    try:
+        # Detectar o separador
+        separator = detect_csv_separator(file_path)
+        
+        # Tentar diferentes encodings
+        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+        
+        for encoding in encodings:
+            try:
+                df = pd.read_csv(file_path, sep=separator, encoding=encoding)
+                # Verificar se a leitura foi bem-sucedida (mais de 1 coluna)
+                if len(df.columns) > 1:
+                    return df, separator, encoding
+            except:
+                continue
+        
+        # Se tudo falhar, tentar com parâmetros padrão
+        df = pd.read_csv(file_path)
+        return df, ',', 'utf-8'
+        
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo CSV: {str(e)}")
+        return None, None, None
+
 
 @function_tool
 def analyze_csv_data(csv_filename: str, analysis_type: str, column_name: str = None) -> str:
@@ -95,7 +154,7 @@ def analyze_csv_data(csv_filename: str, analysis_type: str, column_name: str = N
         
         # Ler o CSV
         try:
-            df = pd.read_csv(file_path)
+            df = read_csv_robust(file_path)
         except Exception as e:
             return json.dumps({
                 "success": False,
