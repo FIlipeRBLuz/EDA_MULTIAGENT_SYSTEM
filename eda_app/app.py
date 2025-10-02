@@ -484,6 +484,9 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
             return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
 
+image = "image/eistein_.jpg"
+st.image(image, use_container_width=True)
+
 # Configurar a página
 st.set_page_config(
     page_title="Einstein Data Scientist - Chat",
@@ -533,7 +536,7 @@ with st.sidebar:
         st.success(f"✅ Arquivo carregado: {uploaded_file.name}")
         
         try:
-            df = pd.read_csv(file_path)
+            df = pd.read_csv_robust(file_path)
             st.subheader("📊 Preview dos Dados")
             st.dataframe(df.head(), use_container_width=True)
             st.info(f"**Dimensões:** {df.shape[0]} linhas × {df.shape[1]} colunas")
