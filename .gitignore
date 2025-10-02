@@ -3,3 +3,5 @@ teste.ipynb
 venv
 app_old.py
 .streamlit
+**/__agents__/
+

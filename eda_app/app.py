@@ -98,13 +98,13 @@ def read_csv_robust(file_path):
                 df = pd.read_csv(file_path, sep=separator, encoding=encoding)
                 # Verificar se a leitura foi bem-sucedida (mais de 1 coluna)
                 if len(df.columns) > 1:
-                    return df, separator, encoding
+                    return df
             except:
                 continue
         
         # Se tudo falhar, tentar com parâmetros padrão
         df = pd.read_csv(file_path)
-        return df, ',', 'utf-8'
+        return df
         
     except Exception as e:
         st.error(f"Erro ao ler o arquivo CSV: {str(e)}")
@@ -301,7 +301,7 @@ def run_eda_analysis(csv_filename: str, question: str) -> str:
         
         # Verificar se é um arquivo CSV válido
         try:
-            df = pd.read_csv(file_path)
+            df = read_csv_robust(file_path)
             rows, cols = df.shape
         except Exception as e:
             return json.dumps({
@@ -460,7 +460,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "storage/conversations.db")
+        session = SQLiteSession(session_id, "storage/conversacional/conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
@@ -485,9 +485,23 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
 
 col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
-image = "eda_app/image/eistein_.jpg"
+primary_path = "eda_app/image/eistein_.jpg"
+fallback_path = "image/eistein_.jpg"
+
+# Verifica qual existe
+if os.path.exists(primary_path):
+    image = primary_path
+elif os.path.exists(fallback_path):
+    image = fallback_path
+else:
+    image = None  # ou um placeholder padrão
+
+
 with col1:
-    st.image(image, use_container_width=True)  # Ajuste o tamanho da imagem
+    if image:
+        st.image(image, caption="Einstein", use_container_width=True)
+    else:
+        st.warning("Imagem não encontrada em nenhum dos diretórios.")
 
 with col2:
     st.title("Einstein Data Scientist - Chat")
@@ -541,7 +555,7 @@ with st.sidebar:
         st.success(f"✅ Arquivo carregado: {uploaded_file.name}")
         
         try:
-            df = pd.read_csv_robust(file_path)
+            df = read_csv_robust(file_path)
             st.subheader("📊 Preview dos Dados")
             st.dataframe(df.head(), use_container_width=True)
             st.info(f"**Dimensões:** {df.shape[0]} linhas × {df.shape[1]} colunas")
