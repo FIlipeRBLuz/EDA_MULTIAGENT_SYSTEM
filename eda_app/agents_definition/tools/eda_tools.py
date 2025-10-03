@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import numpy as np
+import streamlit as st
 
 @tool("describe_data")
 def describe_data(csv_path: str) -> str:

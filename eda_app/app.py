@@ -303,6 +303,7 @@ def execute_python_code(csv_filename: str, python_code: str) -> str:
         
         # Criar código completo com importações e carregamento do CSV
         full_code = f"""
+# -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -490,10 +491,10 @@ guiando o usuário com clareza, precisão e insights valiosos.
 6. Explique sua escolha ao usuário quando relevante
 
 ### COMO USAR execute_python_code:
-- O DataFrame já está carregado como 'df'
+- ATENCAO: O DataFrame já está carregado como 'df'
 - Use pandas, numpy, matplotlib e outras bibliotecas padrão
 - SEMPRE use print() para mostrar resultados
-- SEMPRE salve os gráficos gerados em /charts
+- SEMPRE ao gerar gráficos salve os gráficos em /charts/conversa
 - Exemplo de código:
   ```python
   print(df[df['idade'] > 30]['salario'].mean())
@@ -594,7 +595,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "eda_app\storage\conversacional\conversations.db")
+        session = SQLiteSession(session_id, "storage\conversacional\conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
@@ -793,6 +794,11 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                     import datetime
                     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
                     log_entry = f"[{timestamp}] {message}"
+
+                    # Inicializar área de logs
+                    if "crew_logs" not in st.session_state:
+                        st.session_state.crew_logs = []   
+
                     st.session_state.crew_logs.append(log_entry)
                     
                     # Atualizar display de logs
