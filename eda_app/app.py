@@ -541,7 +541,7 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 - Explique os resultados de forma didática
 - Quando usar execute_python_code, mostre o código executado ao usuário
 """,
-    model="gpt-4",
+    model="o1-mini",
     tools=[analyze_csv_data, execute_python_code, run_eda_analysis],
 )
 
