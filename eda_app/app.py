@@ -460,7 +460,11 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
+<<<<<<< HEAD
         session = SQLiteSession(session_id, "eda_app\storage\conversacional\conversations.db")
+=======
+        session = SQLiteSession(session_id, "eda_app/storage/conversacional/conversations.db")
+>>>>>>> 182ea6d75fba84821e2810a2913c767383a7daed
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
@@ -508,8 +512,8 @@ with col2:
 
 # Configurar a página
 st.set_page_config(
-    # page_title="Einstein Data Scientist - Chat",
-    # page_icon="🧠",
+    page_title="Einstein Data Scientist - Chat",
+    page_icon="🧠",
     layout="wide"
 )
 
