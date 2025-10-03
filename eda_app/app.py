@@ -478,6 +478,7 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 """,
     model="gpt-4",
     tools=[analyze_csv_data, python_runner, run_eda_analysis],
+    reasoning=True
 )
 
 
