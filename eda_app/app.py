@@ -40,6 +40,7 @@ if gen is None:
     except:
         gen = os.getenv("OPENAI_API_KEY")
 
+#para casos do litellm
 if gen:
     os.environ["OPENAI_API_KEY"] = gen
 
@@ -537,12 +538,26 @@ guiando o usuário com clareza, precisão e insights valiosos.
 **Reasoning:** EDA completa requer múltiplas visualizações
 **Ação:** Use run_eda_analysis
 
+**Pergunta:** "Quantos registros têm idade > 30?"
+**Reasoning:** Requer filtragem customizada
+**Ação:** execute_python_code(python_code="print(len(df[df['idade'] > 30]))")
+
+**Pergunta:** "Qual a média de salário por categoria?"
+**Reasoning:** Requer agregação por grupo
+**Ação:** execute_python_code(python_code="print(df.groupby('categoria')['salario'].mean())")
+
+**Pergunta:** "Quais são as 5 categorias com maior média de valor?"
+**Reasoning:** Requer agregação, ordenação e seleção
+**Ação:** execute_python_code(python_code="print(df.groupby('categoria')['valor'].mean().nlargest(5))")
+
+
 ### GUARDRAILS
 - NUNCA acione run_eda_analysis para perguntas que podem ser respondidas com analyze_csv_data
 - Seja claro sobre o tempo de processamento (5-10 minutos para EDA)
 - Sempre confirme qual arquivo CSV está sendo analisado
 - Use linguagem clara e evite jargões excessivos
 - Explique os resultados de forma didática
+- Quando usar execute_python_code, mostre o código executado ao usuário
 """,
     model="gpt-4.1-mini",
     tools=[analyze_csv_data, execute_python_code, run_eda_analysis]
@@ -629,7 +644,7 @@ else:
 
 with col1:
     if image:
-        st.image(image, caption="Einstein", use_container_width=True)
+        st.image(image, use_container_width=True)
     else:
         st.warning("Imagem não encontrada em nenhum dos diretórios.")
 
@@ -721,6 +736,9 @@ if "messages" not in st.session_state:
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = "streamlit_user_session"
+
+if "crew_logs" not in st.session_state:
+    st.session_state.crew_logs = []
 
 # Área de chat
 st.subheader("💬 Chat com Einstein")

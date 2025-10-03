@@ -23,17 +23,15 @@ except ImportError:
     function_tool = openai_agents_lib.function_tool
 
 # Importar a função create_eda_crew
+# Importar a função create_eda_crew
 try:
-    from agents.crews.eda_crew import create_eda_crew
+    from agents_definition.crews.eda_crew import create_eda_crew
 except ImportError:
-    try:
-        from agents_definition.crews.eda_crew import create_eda_crew
-    except ImportError:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("eda_crew", "agents/crews/eda_crew.py")
-        eda_crew_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(eda_crew_module)
-        create_eda_crew = eda_crew_module.create_eda_crew
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("eda_crew", "agents/crews/eda_crew.py")
+    eda_crew_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(eda_crew_module)
+    create_eda_crew = eda_crew_module.create_eda_crew
 
 # Configurar API Key
 gen = os.getenv("OPENAI_KEY_API")
@@ -43,6 +41,7 @@ if gen is None:
     except:
         gen = os.getenv("OPENAI_API_KEY")
 
+#para casos do litellm
 if gen:
     os.environ["OPENAI_API_KEY"] = gen
 
@@ -579,13 +578,14 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "conversations.db")
+        session = SQLiteSession(session_id, "eda_app\storage\conversacional\conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
             agent,
             user_message,
             session=session
+
         )
         
         return result.final_output
@@ -593,14 +593,24 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
     except Exception as e:
         # Se falhar, tentar sem sessão (sem memória)
         try:
+            session = SQLiteSession(session_id)
             result = Runner.run_sync(
                 agent,
                 user_message,
-                session=None
+                session=session
             )
-            return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
-        except Exception as e2:
-            return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
+            return result.final_output
+        except Exception as e:
+            try:
+                session = SQLiteSession(session_id)
+                result = Runner.run_sync(
+                    agent,
+                    user_message,
+                    session=session
+                )
+                return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
+            except Exception as e2:
+                return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
 
 # Configurar a página
@@ -725,6 +735,10 @@ if prompt := st.chat_input("Digite sua mensagem..."):
             
             will_run_eda = any(keyword in prompt.lower() for keyword in keywords)
             
+            # Inicializar área de logs
+            if "crew_logs" not in st.session_state:
+                st.session_state.crew_logs = []
+
             if will_run_eda:
                 # Aviso inicial ao usuário ANTES de qualquer processamento
                 st.info("🚀 **Acionando Fluxo Multiagente para Análise Visual**")
