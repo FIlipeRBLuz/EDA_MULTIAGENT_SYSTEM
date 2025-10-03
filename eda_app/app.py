@@ -517,8 +517,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         result = Runner.run_sync(
             agent,
             user_message,
-            session=session,
-            reasoning={"effort": "medium"}
+            session=session
 
         )
         
