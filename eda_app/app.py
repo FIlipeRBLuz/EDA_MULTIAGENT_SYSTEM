@@ -476,9 +476,9 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 - Use linguagem clara e evite jargões excessivos
 - Explique os resultados de forma didática
 """,
-    model="gpt-4",
-    tools=[analyze_csv_data, python_runner, run_eda_analysis],
-    reasoning=True
+    model="gpt-4.1-mini",
+    reasoning={"effort": "medium"},
+    tools=[analyze_csv_data, python_runner, run_eda_analysis]
 )
 
 
@@ -518,7 +518,8 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         result = Runner.run_sync(
             agent,
             user_message,
-            session=session
+            session=session,
+
         )
         
         return result.final_output
