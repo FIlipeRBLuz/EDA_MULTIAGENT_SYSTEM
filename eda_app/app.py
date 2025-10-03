@@ -303,17 +303,17 @@ def execute_python_code(csv_filename: str, python_code: str) -> str:
         
         # Criar código completo com importações e carregamento do CSV
         full_code = f"""
-            import pandas as pd
-            import numpy as np
-            from pathlib import Path
+        import pandas as pd
+        import numpy as np
+        from pathlib import Path
 
-            # Carregar o CSV
-            file_path = Path("data") / "{csv_filename}"
-            df = pd.read_csv(file_path)
-
-            # Código do usuário
-            {python_code}
-"""
+        # Carregar o CSV
+        file_path = Path("data") / "{csv_filename}"
+        df = pd.read_csv(file_path)
+        
+        # Código do usuário
+        {python_code}
+        """
         
         # Criar arquivo temporário
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
