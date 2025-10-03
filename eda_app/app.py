@@ -532,9 +532,18 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
                 user_message,
                 session=session
             )
-            return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
-        except Exception as e2:
-            return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
+            return result.final_output
+        except Exception as e:
+            try:
+                session = SQLiteSession(session_id)
+                result = Runner.run_sync(
+                    agent,
+                    user_message,
+                    session=session
+                )
+                return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
+            except Exception as e2:
+                return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
 col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
