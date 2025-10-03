@@ -7,6 +7,8 @@ import streamlit as st
 from pathlib import Path
 from typing import Optional
 import threading
+import subprocess
+import tempfile
 
 # IMPORTANTE: Importar da biblioteca openai-agents
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,13 +24,16 @@ except ImportError:
 
 # Importar a função create_eda_crew
 try:
-    from agents_definition.crews.eda_crew import create_eda_crew
+    from agents.crews.eda_crew import create_eda_crew
 except ImportError:
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("eda_crew", "agents/crews/eda_crew.py")
-    eda_crew_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(eda_crew_module)
-    create_eda_crew = eda_crew_module.create_eda_crew
+    try:
+        from agents_definition.crews.eda_crew import create_eda_crew
+    except ImportError:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("eda_crew", "agents/crews/eda_crew.py")
+        eda_crew_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(eda_crew_module)
+        create_eda_crew = eda_crew_module.create_eda_crew
 
 # Configurar API Key
 gen = os.getenv("OPENAI_KEY_API")
@@ -109,6 +114,93 @@ def read_csv_robust(file_path):
     except Exception as e:
         st.error(f"Erro ao ler o arquivo CSV: {str(e)}")
         return None, None, None
+
+@function_tool
+def execute_python_code(csv_filename: str, python_code: str) -> str:
+    """
+    Executa código Python para analisar dados do CSV.
+    Use esta ferramenta quando precisar fazer análises customizadas que não são cobertas por analyze_csv_data.
+    
+    Args:
+        csv_filename: Nome do arquivo CSV no diretório data/ (ex: 'dataset.csv')
+        python_code: Código Python a ser executado. O DataFrame estará disponível como 'df'.
+                    Exemplo: "print(df['coluna'].value_counts())"
+    
+    Returns:
+        Resultado da execução em formato JSON string
+    """
+    try:
+        # Construir o caminho completo do arquivo
+        data_dir = Path("data")
+        file_path = data_dir / csv_filename
+        
+        # Verificar se o arquivo existe
+        if not file_path.exists():
+            return json.dumps({
+                "success": False,
+                "error": f"Arquivo {csv_filename} não encontrado no diretório data/"
+            })
+        
+        # Criar código completo com importações e carregamento do CSV
+        full_code = f"""
+import pandas as pd
+import numpy as np
+from pathlib import Path
+
+# Carregar o CSV
+file_path = Path("data") / "{csv_filename}"
+df = pd.read_csv(file_path)
+
+# Código do usuário
+{python_code}
+"""
+        
+        # Criar arquivo temporário
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
+            tmp.write(full_code)
+            tmp_path = tmp.name
+        
+        try:
+            # Executar código
+            proc = subprocess.Popen(
+                [sys.executable, tmp_path],
+                cwd=os.getcwd(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            stdout, stderr = proc.communicate(timeout=30)
+            exit_code = proc.returncode
+            
+            # Limpar arquivo temporário
+            os.remove(tmp_path)
+            
+            if exit_code == 0:
+                return json.dumps({
+                    "success": True,
+                    "output": stdout,
+                    "code_executed": python_code
+                })
+            else:
+                return json.dumps({
+                    "success": False,
+                    "error": stderr,
+                    "output": stdout
+                })
+                
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            os.remove(tmp_path)
+            return json.dumps({
+                "success": False,
+                "error": "Código demorou muito para executar (timeout de 30s)"
+            })
+            
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": f"Erro ao executar código: {str(e)}"
+        })
 
 
 @function_tool
@@ -272,56 +364,6 @@ def analyze_csv_data(csv_filename: str, analysis_type: str, column_name: str = N
             "error": f"Erro ao analisar dados: {str(e)}"
         })
 
-@function_tool
-def python_runner(code: str, workdir: str = None, timeout: int = 30) -> dict:
-    """
-    Executa código Python 3 em um subprocesso isolado.
-
-    Args:
-        code (str): Código Python a ser executado.
-        workdir (str): Diretório de trabalho (ex.: onde está o CSV).
-        timeout (int): Tempo limite em segundos.
-
-    Returns:
-        dict: stdout, stderr e código de saída.
-    """
-    import subprocess
-    import tempfile
-    import sys
-
-    if workdir is None:
-        workdir = os.getcwd()
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-        tmp.write(code)
-        tmp_path = tmp.name
-
-    try:
-        proc = subprocess.Popen(
-            [sys.executable, tmp_path],
-            cwd=workdir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        out, err = proc.communicate(timeout=timeout)
-        exit_code = proc.returncode
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        out, err = proc.communicate()
-        err += "\n[TimeoutExpired: código demorou demais para executar]"
-        exit_code = -1
-    finally:
-        try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-
-    return {
-        "stdout": out,
-        "stderr": err,
-        "exit_code": exit_code
-    }
 
 @function_tool
 def run_eda_analysis(csv_filename: str, question: str) -> str:
@@ -397,27 +439,41 @@ agent = Agent(
     name="Einstein Data Scientist",
     instructions="""
 ### ROLE
-Especialista em estatística, ciência de dados e inteligência artificial. Atua como analista interativo, capaz de interpretar dados, gerar visualizações e conduzir investigações exploratórias com profundidade.
+Especialista em estatística, ciência de dados e inteligência artificial. 
+Atua como analista interativo, capaz de interpretar dados, gerar visualizações e conduzir
+investigações exploratórias com profundidade.
 
 ### GOAL
-Conversar com o usuário sobre seus dados e fornecer insights precisos. Você tem duas ferramentas à disposição:
-1. analyze_csv_data: Para análises rápidas e perguntas diretas sobre os dados
-2. run_eda_analysis: Para análises exploratórias completas com visualizações (multiagentes)
+Conversar com o usuário sobre seus dados e fornecer insights precisos. Você tem TRÊS ferramentas à disposição:
+1. analyze_csv_data: Para análises rápidas pré-definidas (média, mediana, etc.)
+2. execute_python_code: Para análises customizadas executando código Python
+3. run_eda_analysis: Para análises exploratórias completas com visualizações (multiagentes)
 
 ### BACKSTORY
-Você é Einstein, o cientista de dados! Sua missão é transformar dados em conhecimento acionável, guiando o usuário com clareza e precisão.
+Você é Einstein, o cientista de dados senior! Sua missão é transformar dados em conhecimento acionável,
+guiando o usuário com clareza, precisão e insights valiosos.
 
 ### REASONING - QUANDO USAR CADA FERRAMENTA:
 
 **USE analyze_csv_data PARA:**
-- Perguntas sobre estatísticas descritivas: média, mediana, desvio padrão, min, max
+- Perguntas sobre estatísticas descritivas simples: média, mediana, desvio padrão, min, max
 - Consultas sobre dimensões do dataset: quantas linhas, quantas colunas
 - Verificação de valores: valores únicos, valores faltantes, tipos de dados
 - Listagem de colunas disponíveis
 - Visualização de primeiras linhas do dataset
 - Contagens e frequências de valores
 - Correlações numéricas (valores, não gráficos)
-- Qualquer pergunta que possa ser respondida com números/texto
+
+**USE execute_python_code PARA:**
+- Análises customizadas que não são cobertas por analyze_csv_data
+- Cálculos complexos envolvendo múltiplas colunas
+- Filtragens e agregações específicas
+- Transformações de dados
+- Análises estatísticas avançadas
+- Qualquer pergunta que exija código Python customizado
+- Exemplo: "Quantos registros têm idade > 30 E salário < 5000?"
+- Exemplo: "Qual a média de salário por categoria?"
+- Exemplo: "Mostre os 10 maiores valores da coluna X"
 
 **USE run_eda_analysis PARA:**
 - Solicitações explícitas de gráficos: "mostre um gráfico", "crie uma visualização"
@@ -425,59 +481,71 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 - Análise exploratória completa (EDA)
 - Quando o usuário pedir "análise visual" ou "visualização"
 - Quando múltiplos gráficos são necessários para responder adequadamente
-- Quando a resposta requer interpretação visual dos padrões
 
 ### PROCESSO DE REASONING:
 1. Analise a pergunta do usuário cuidadosamente
-2. Identifique se a resposta requer visualização ou apenas números/texto
-3. Se for pergunta simples → use analyze_csv_data (resposta em segundos)
-4. Se a pergunta exigir calculo, pense no pedido feito, gere codigo python -> use python_runner
-5. Se for pergunta visual → use run_eda_analysis (5-10 minutos)
-6. Explique sua escolha ao usuário quando relevante
+2. Identifique se é:
+   a) Pergunta simples → analyze_csv_data (segundos)
+   b) Pergunta complexa sem gráficos → execute_python_code (segundos)
+   c) Pergunta visual → run_eda_analysis (5-10 minutos)
+3. Explique sua escolha ao usuário quando relevante
+
+### COMO USAR execute_python_code:
+- O DataFrame já está carregado como 'df'
+- Use pandas, numpy e outras bibliotecas padrão
+- SEMPRE use print() para mostrar resultados
+- Exemplo de código:
+  ```python
+  print(df[df['idade'] > 30]['salario'].mean())
+  ```
+- Exemplo complexo:
+  ```python
+  resultado = df.groupby('categoria')['valor'].agg(['mean', 'sum', 'count'])
+  print(resultado)
+  ```
 
 ### ACT
 - Seja conversacional, amigável e didático
-- SEMPRE use analyze_csv_data primeiro para perguntas simples
+- SEMPRE escolha a ferramenta mais eficiente
+- Use execute_python_code para análises customizadas
 - APENAS acione run_eda_analysis quando visualizações forem realmente necessárias
 - Antes de usar run_eda_analysis, avise: "Eureka! Vou acionar os Multi Agentes para criar visualizações. Isso levará de 5 a 10 minutos..."
-- Após receber resultados, explique os insights de forma clara
+- Após receber resultados, explique detalhadamente os insights de forma clara
 - Seja proativo em sugerir análises adicionais relevantes
 
 ### EXEMPLOS DE REASONING:
 
 **Pergunta:** "Qual a média da coluna idade?"
 **Reasoning:** Pergunta simples sobre estatística descritiva
-**Ação:** Use analyze_csv_data com analysis_type='mean' e column_name='idade'
+**Ação:** analyze_csv_data(analysis_type='mean', column_name='idade')
+
+**Pergunta:** "Quantos registros têm idade > 30?"
+**Reasoning:** Requer filtragem customizada
+**Ação:** execute_python_code(python_code="print(len(df[df['idade'] > 30]))")
+
+**Pergunta:** "Qual a média de salário por categoria?"
+**Reasoning:** Requer agregação por grupo
+**Ação:** execute_python_code(python_code="print(df.groupby('categoria')['salario'].mean())")
 
 **Pergunta:** "Mostre a distribuição da coluna idade"
 **Reasoning:** Requer visualização (histograma)
-**Ação:** Use run_eda_analysis
+**Ação:** run_eda_analysis()
 
-**Pergunta:** "Quantas linhas tem o dataset?"
-**Reasoning:** Pergunta sobre dimensões, resposta numérica simples
-**Ação:** Use analyze_csv_data com analysis_type='shape'
-
-**Pergunta:** "Crie um boxplot da coluna salário"
-**Reasoning:** Solicitação explícita de gráfico
-**Ação:** Use run_eda_analysis
-
-**Pergunta:** "Quais são as colunas disponíveis?"
-**Reasoning:** Listagem simples, sem necessidade de visualização
-**Ação:** Use analyze_csv_data com analysis_type='columns'
-
-**Pergunta:** "Faça uma análise exploratória completa"
-**Reasoning:** EDA completa requer múltiplas visualizações
-**Ação:** Use run_eda_analysis
+**Pergunta:** "Quais são as 5 categorias com maior média de valor?"
+**Reasoning:** Requer agregação, ordenação e seleção
+**Ação:** execute_python_code(python_code="print(df.groupby('categoria')['valor'].mean().nlargest(5))")
 
 ### GUARDRAILS
-- NUNCA acione run_eda_analysis para perguntas que podem ser respondidas com analyze_csv_data
+- NUNCA acione run_eda_analysis para perguntas que podem ser respondidas com as outras ferramentas
+- Sempre valide se o código Python é seguro antes de executar
 - Seja claro sobre o tempo de processamento (5-10 minutos para EDA)
 - Sempre confirme qual arquivo CSV está sendo analisado
 - Use linguagem clara e evite jargões excessivos
 - Explique os resultados de forma didática
+- Quando usar execute_python_code, mostre o código executado ao usuário
 """,
     model="gpt-4.1-mini",
-    tools=[analyze_csv_data, python_runner, run_eda_analysis]
+    tools=[analyze_csv_data, execute_python_code, run_eda_analysis],
 )
 
 
@@ -511,14 +579,13 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "eda_app\storage\conversacional\conversations.db")
+        session = SQLiteSession(session_id, "conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
             agent,
             user_message,
             session=session
-
         )
         
         return result.final_output
@@ -526,47 +593,15 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
     except Exception as e:
         # Se falhar, tentar sem sessão (sem memória)
         try:
-            session = SQLiteSession(session_id)
             result = Runner.run_sync(
                 agent,
                 user_message,
-                session=session
+                session=None
             )
-            return result.final_output
-        except Exception as e:
-            try:
-                session = SQLiteSession(session_id)
-                result = Runner.run_sync(
-                    agent,
-                    user_message,
-                    session=session
-                )
-                return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
-            except Exception as e2:
-                return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
+            return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
+        except Exception as e2:
+            return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
-col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
-
-primary_path = "eda_app/image/eistein_.jpg"
-fallback_path = "image/eistein_.jpg"
-
-# Verifica qual existe
-if os.path.exists(primary_path):
-    image = primary_path
-elif os.path.exists(fallback_path):
-    image = fallback_path
-else:
-    image = None  # ou um placeholder padrão
-
-
-with col1:
-    if image:
-        st.image(image, caption="Einstein", use_container_width=True)
-    else:
-        st.warning("Imagem não encontrada em nenhum dos diretórios.")
-
-with col2:
-    st.title("Einstein Data Scientist - Chat")
 
 # Configurar a página
 st.set_page_config(
@@ -592,7 +627,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título
-# st.title("🧠 Einstein Data Scientist")
+st.title("🧠 Einstein Data Scientist")
 st.markdown("*Converse com o agente sobre seus dados*")
 
 # Sidebar
@@ -631,13 +666,15 @@ with st.sidebar:
     ### Como usar:
     1. 📤 Faça upload do arquivo CSV
     2. 💬 Converse com Einstein sobre os dados
-    3. 📊 Solicite gráficos e visualizações
-    4. ⏱️ Aguarde 5-10 min para análises visuais
+    3. 🐍 Perguntas complexas são resolvidas com Python
+    4. 📊 Solicite gráficos para análises visuais
+    5. ⏱️ Aguarde 5-10 min para análises visuais completas
     
     ### Exemplos de perguntas:
     - "Qual a média da coluna X?"
+    - "Quantos registros têm valor > 100?"
+    - "Qual a soma por categoria?"
     - "Mostre um histograma da coluna Y"
-    - "Crie um gráfico de correlação"
     - "Faça uma análise exploratória completa"
     """)
     
@@ -653,6 +690,9 @@ if "messages" not in st.session_state:
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = "streamlit_user_session"
+
+if "crew_logs" not in st.session_state:
+    st.session_state.crew_logs = []
 
 # Área de chat
 st.subheader("💬 Chat com Einstein")
@@ -685,9 +725,6 @@ if prompt := st.chat_input("Digite sua mensagem..."):
             
             will_run_eda = any(keyword in prompt.lower() for keyword in keywords)
             
-            # Inicializar área de logs
-            if "crew_logs" not in st.session_state:
-                st.session_state.crew_logs = []       
             if will_run_eda:
                 # Aviso inicial ao usuário ANTES de qualquer processamento
                 st.info("🚀 **Acionando Fluxo Multiagente para Análise Visual**")
@@ -696,7 +733,6 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                 
                 # Criar área de logs em tempo real
                 st.markdown("### 📋 Logs de Execução da Crew")
-                logs_container = st.container()
                 logs_placeholder = st.empty()
                 
                 # Limpar logs anteriores
@@ -713,7 +749,7 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                     with logs_placeholder.container():
                         st.text_area(
                             "Logs em tempo real:",
-                            value="\n".join(st.session_state.crew_logs[-20:]),  # Últimas 20 linhas
+                            value="\n".join(st.session_state.crew_logs[-20:]),
                             height=200,
                             key=f"logs_display_{len(st.session_state.crew_logs)}"
                         )
@@ -776,15 +812,15 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                                 mins, secs = divmod(elapsed, 60)
                                 time_text.text(f"⏱️ Tempo decorrido: {mins}min {secs}s")
                                 
-                                # Velocidade variável: mais lento no início, mais rápido no fim
+                                # Velocidade variável
                                 if pct < 30:
-                                    time.sleep(4)  # Mais lento no início
+                                    time.sleep(4)
                                 elif pct < 60:
-                                    time.sleep(3)  # Médio
+                                    time.sleep(3)
                                 elif pct < 85:
-                                    time.sleep(2.5)  # Mais rápido
+                                    time.sleep(2.5)
                                 else:
-                                    time.sleep(2)  # Rápido no final
+                                    time.sleep(2)
                             
                             stage_idx += 1
                         
@@ -800,7 +836,7 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                         add_log("🔄 Executando agente conversacional...")
                         add_log("🤖 Agente está processando a solicitação...")
                         
-                        # Executar o agente (isso vai chamar create_eda_crew e kickoff)
+                        # Executar o agente
                         response = chat_with_agent_sync(
                             enhanced_prompt, 
                             st.session_state.session_id
@@ -826,7 +862,7 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                         add_log(f"❌ ERRO: {str(e)}")
                         response = f"❌ Erro ao processar: {str(e)}"
                     finally:
-                        # Limpar barra de progresso após 2 segundos
+                        # Limpar barra de progresso
                         time.sleep(1)
                         progress_placeholder.empty()
                         add_log("📋 Logs finalizados.")
@@ -852,7 +888,7 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                 # Exibir resposta
                 st.markdown(response)
             
-            # Adicionar resposta ao histórico (para ambos os casos)
+            # Adicionar resposta ao histórico
             st.session_state.messages.append({
                 "role": "assistant", 
                 "content": response
@@ -885,14 +921,11 @@ if st.session_state.eda_markdown:
         charts_dir = Path("charts")
         
         if charts_dir.exists():
-            # Encontrar todas as referências de imagens no markdown
             def replace_image_path(match):
                 alt_text = match.group(1)
                 img_path = match.group(2)
                 
-                # Se for caminho relativo, converter para absoluto
                 if not img_path.startswith(('http://', 'https://', 'data:')):
-                    # Remover prefixo charts/ se existir
                     img_filename = img_path.split('/')[-1]
                     full_path = charts_dir / img_filename
                     
@@ -917,7 +950,6 @@ if st.session_state.eda_markdown:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            # Botão para download do relatório em markdown
             st.download_button(
                 label="📄 Baixar Relatório (Markdown)",
                 data=st.session_state.eda_markdown,
@@ -928,7 +960,6 @@ if st.session_state.eda_markdown:
             )
         
         with col2:
-            # Botão para exibir logs
             if st.session_state.crew_logs:
                 with st.expander("📋 Ver Logs de Execução"):
                     st.text_area(
@@ -939,7 +970,6 @@ if st.session_state.eda_markdown:
                     )
         
         with col3:
-            # Botão para limpar relatório
             if st.button("🗑️ Limpar Tudo", key="clear_report_bottom", use_container_width=True):
                 st.session_state.eda_markdown = None
                 st.session_state.crew_logs = []
@@ -973,7 +1003,6 @@ if st.session_state.eda_markdown:
                             chart_file = chart_files[idx]
                             
                             with col:
-                                # Exibir imagem
                                 try:
                                     st.image(
                                         str(chart_file),
@@ -981,7 +1010,6 @@ if st.session_state.eda_markdown:
                                         caption=chart_file.name
                                     )
                                     
-                                    # Botão de download individual
                                     with open(chart_file, "rb") as f:
                                         st.download_button(
                                             label=f"⬇️ Baixar {chart_file.name}",
