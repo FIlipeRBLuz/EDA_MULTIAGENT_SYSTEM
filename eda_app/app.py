@@ -460,11 +460,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-<<<<<<< HEAD
         session = SQLiteSession(session_id, "eda_app\storage\conversacional\conversations.db")
-=======
-        session = SQLiteSession(session_id, "eda_app/storage/conversacional/conversations.db")
->>>>>>> 182ea6d75fba84821e2810a2913c767383a7daed
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
@@ -478,10 +474,11 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
     except Exception as e:
         # Se falhar, tentar sem sessão (sem memória)
         try:
+            session = SQLiteSession(session_id)
             result = Runner.run_sync(
                 agent,
                 user_message,
-                session=None
+                session=session
             )
             return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
         except Exception as e2:
