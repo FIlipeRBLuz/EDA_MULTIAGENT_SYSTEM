@@ -272,6 +272,56 @@ def analyze_csv_data(csv_filename: str, analysis_type: str, column_name: str = N
             "error": f"Erro ao analisar dados: {str(e)}"
         })
 
+@function_tool
+def python_runner(code: str, workdir: str = None, timeout: int = 30) -> dict:
+    """
+    Executa código Python 3 em um subprocesso isolado.
+
+    Args:
+        code (str): Código Python a ser executado.
+        workdir (str): Diretório de trabalho (ex.: onde está o CSV).
+        timeout (int): Tempo limite em segundos.
+
+    Returns:
+        dict: stdout, stderr e código de saída.
+    """
+    import subprocess
+    import tempfile
+    import sys
+
+    if workdir is None:
+        workdir = os.getcwd()
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
+        tmp.write(code)
+        tmp_path = tmp.name
+
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, tmp_path],
+            cwd=workdir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        out, err = proc.communicate(timeout=timeout)
+        exit_code = proc.returncode
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        out, err = proc.communicate()
+        err += "\n[TimeoutExpired: código demorou demais para executar]"
+        exit_code = -1
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+
+    return {
+        "stdout": out,
+        "stderr": err,
+        "exit_code": exit_code
+    }
 
 @function_tool
 def run_eda_analysis(csv_filename: str, question: str) -> str:
@@ -381,9 +431,9 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 1. Analise a pergunta do usuário cuidadosamente
 2. Identifique se a resposta requer visualização ou apenas números/texto
 3. Se for pergunta simples → use analyze_csv_data (resposta em segundos)
-4. Se a pergunta exigir calculo -> use 
-4. Se for pergunta visual → use run_eda_analysis (5-10 minutos)
-5. Explique sua escolha ao usuário quando relevante
+4. Se a pergunta exigir calculo, pense no pedido feito, gere codigo python -> use python_runner
+5. Se for pergunta visual → use run_eda_analysis (5-10 minutos)
+6. Explique sua escolha ao usuário quando relevante
 
 ### ACT
 - Seja conversacional, amigável e didático
@@ -427,7 +477,7 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 - Explique os resultados de forma didática
 """,
     model="gpt-4",
-    tools=[analyze_csv_data, run_eda_analysis],
+    tools=[analyze_csv_data, python_runner, run_eda_analysis],
 )
 
 
