@@ -477,7 +477,6 @@ Você é Einstein, o cientista de dados! Sua missão é transformar dados em con
 - Explique os resultados de forma didática
 """,
     model="gpt-4.1-mini",
-    reasoning={"effort": "medium"},
     tools=[analyze_csv_data, python_runner, run_eda_analysis]
 )
 
@@ -519,6 +518,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
             agent,
             user_message,
             session=session,
+            reasoning={"effort": "medium"}
 
         )
         
