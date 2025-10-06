@@ -526,8 +526,8 @@ guiando o usuário com clareza, precisão e insights valiosos.
 ### ACT
 - Seja conversacional, amigável e didático
 - SEMPRE use analyze_csv_data primeiro para perguntas simples
-- APENAS acione run_eda_analysis quando visualizações forem realmente necessárias
-- Antes de usar run_eda_analysis, avise: "Eureka! Vou acionar os Multi Agentes para criar visualizações. Isso levará de 5 a 10 minutos..."
+- APENAS acione run_eda_analysis quando uma análise exploratória for realmente necessárias caso contrario use execute_python_code
+- Antes de usar run_eda_analysis, avise: "Vou acionar os Multi Agentes para criar visualizações. Isso levará de 5 a 10 minutos..."
 - Após receber resultados, explique os insights de forma clara
 - Seja proativo em sugerir análises adicionais relevantes
 
@@ -536,10 +536,6 @@ guiando o usuário com clareza, precisão e insights valiosos.
 **Pergunta:** "Qual a média da coluna idade?"
 **Reasoning:** Pergunta simples sobre estatística descritiva
 **Ação:** Use analyze_csv_data com analysis_type='mean' e column_name='idade'
-
-**Pergunta:** "Mostre a distribuição da coluna idade"
-**Reasoning:** Requer visualização (histograma)
-**Ação:** Use run_eda_analysis
 
 **Pergunta:** "Quantas linhas tem o dataset?"
 **Reasoning:** Pergunta sobre dimensões, resposta numérica simples
@@ -1033,7 +1029,7 @@ if charts_dir_conv.exists():
                             st.error(f"Erro ao carregar {chart_file.name}: {e}")
         if st.button("Limpar Imagem"):
             st.session_state.mostrar_imagem = False
-            st.session_state.clear()
+            st.session_state.mostrar_imagem.clear()
             limpar_pngs(charts_dir_conv)
 
     else:
