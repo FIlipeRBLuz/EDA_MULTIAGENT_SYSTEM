@@ -9,6 +9,8 @@ from typing import Optional
 import threading
 import subprocess
 import tempfile
+from PIL import Image
+
 
 # IMPORTANTE: Importar da biblioteca openai-agents
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -492,6 +494,8 @@ guiando o usuário com clareza, precisão e insights valiosos.
 
 ### COMO USAR execute_python_code:
 - ATENCAO: O DataFrame já está carregado como 'df'
+- Busque sempre validar o carregamento de csv
+- Atente-se para os encodes e separadores possiveis em csv
 - Use pandas, numpy, matplotlib e outras bibliotecas padrão
 - SEMPRE use print() para mostrar resultados
 - SEMPRE ao gerar gráficos salve os gráficos em /charts/conversa
@@ -529,9 +533,22 @@ guiando o usuário com clareza, precisão e insights valiosos.
 
 **Pergunta:** "Crie um boxplot da coluna salário"
 **Reasoning:** Solicitação explícita de gráfico
-**Ação:** Use run_eda_analysis
+**Ação:** Use execute_python_code(python_code="plt.figure(figsize=(8, 6))
+plt.boxplot(df[salário], labels=['Salario'])
+plt.title('Boxplot de Salario')
+plt.ylabel('Valores')
+plt.grid(True)
+plt.savefig('charts/conversa/boxplot_salario.png', dpi=300, bbox_inches='tight')
+
+# Exibindo o gráfico
+plt.show()
+")
 
 **Pergunta:** "Quais são as colunas disponíveis?"
+**Reasoning:** Listagem simples, sem necessidade de visualização
+**Ação:** Use analyze_csv_data com analysis_type='columns'
+
+**Pergunta:** "Quais a média da coluna vendas?"
 **Reasoning:** Listagem simples, sem necessidade de visualização
 **Ação:** Use analyze_csv_data com analysis_type='columns'
 
@@ -949,6 +966,58 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                 "role": "assistant", 
                 "content": response
             })
+# Área persistente para exibir graficso simples gerados pelo assistente de conversa
+st.divider()
+charts_dir = Path("charts/conversa")
+if charts_dir.exists():
+    image_extensions = ['.png', '.jpg', '.jpeg', '.svg']
+    chart_files = []
+    
+    for ext in image_extensions:
+        chart_files.extend(list(charts_dir.glob(f"*{ext}")))
+    
+    if chart_files:
+        chart_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+        
+        st.success(f"✅ {len(chart_files)} gráfico(s) disponível(is) para download")
+        
+        # Exibir gráficos em grid 2x2
+        cols_per_row = 2
+        for i in range(0, len(chart_files), cols_per_row):
+            cols = st.columns(cols_per_row)
+            
+            for j, col in enumerate(cols):
+                idx = i + j
+                if idx < len(chart_files):
+                    chart_file = chart_files[idx]
+                    
+                    with col:
+                        # Exibir imagem
+                        try:
+                            st.image(
+                                str(chart_file),
+                                use_container_width=True,
+                                caption=chart_file.name
+                            )
+                            
+                            # Botão de download individual
+                            with open(chart_file, "rb") as f:
+                                st.download_button(
+                                    label=f"⬇️ Baixar {chart_file.name}",
+                                    data=f.read(),
+                                    file_name=chart_file.name,
+                                    mime=f"image/{chart_file.suffix[1:]}",
+                                    key=f"download_chart_{chart_file.name}",
+                                    use_container_width=True
+                                )
+                        except Exception as e:
+                            st.error(f"Erro ao carregar {chart_file.name}: {e}")
+    else:
+        st.info("ℹ️ Nenhum gráfico disponível.")
+else:
+    st.warning("⚠️ Diretório 'charts' não encontrado.")
+
+
 
 # Área persistente para exibir relatório EDA (fora do chat)
 st.divider()
