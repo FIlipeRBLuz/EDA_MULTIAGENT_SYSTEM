@@ -10,6 +10,7 @@ import threading
 import subprocess
 import tempfile
 from PIL import Image
+import glob
 
 
 # IMPORTANTE: Importar da biblioteca openai-agents
