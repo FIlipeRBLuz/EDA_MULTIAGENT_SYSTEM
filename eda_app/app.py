@@ -624,7 +624,7 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
         loop = get_or_create_eventloop()
         
         # Criar sessão com memória persistente
-        session = SQLiteSession(session_id, "storage\conversacional\conversations.db")
+        session = SQLiteSession(session_id, "storage\\conversacional\\conversations.db")
         
         # Executar o agente de forma síncrona usando Runner.run_sync
         result = Runner.run_sync(
