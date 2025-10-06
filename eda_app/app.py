@@ -1037,9 +1037,8 @@ if charts_dir_conv.exists():
     else:
         st.info("ℹ️ Nenhum gráfico disponível.")
 else:
-    charts_dir_conv.mkdir(exist_ok=True)
+    Path("charts/conversa").mkdir(parents=True, exist_ok=True)
     #st.warning("⚠️ Diretório 'charts/conversa' não encontrado.")
-
 
 
 # Área persistente para exibir relatório EDA (fora do chat)
