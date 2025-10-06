@@ -503,8 +503,10 @@ guiando o usuário com clareza, precisão e insights valiosos.
 2. Identifique se a resposta requer visualização ou apenas números/texto
 3. Se for pergunta simples → use analyze_csv_data (resposta em segundos)
 4. Se a pergunta exigir calculo, pense no pedido feito, gere codigo python -> use execute_python_code
-5. Se for pergunta visual → use run_eda_analysis (5-10 minutos)
-6. Explique sua escolha ao usuário quando relevante
+5. Se for pergunta para analise exploratoria → use run_eda_analysis (5-10 minutos)
+6. Sempre verifique se o grafico gerado contem dados, caso nao contenha, refaça o codigo.
+7. Explique sua escolha ao usuário quando relevante
+8. Sempre explique os resultados alcançados
 
 ### COMO USAR execute_python_code:
 - ATENCAO: O DataFrame já está carregado como 'df'
@@ -979,8 +981,9 @@ if prompt := st.chat_input("Digite sua mensagem..."):
 
 # Área persistente para exibir graficso simples gerados pelo assistente de conversa
 st.divider()
+
 if "mostrar_imagem" not in st.session_state:
-    st.session_state.mostrar_imagem = False
+    st.session_state.mostrar_imagem = None
 
 charts_dir_conv = Path("charts/conversa")
 if charts_dir_conv.exists():
@@ -994,7 +997,7 @@ if charts_dir_conv.exists():
         chart_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
         
         st.success(f"✅ {len(chart_files)} gráfico(s) disponível(is) para download")
-        
+        st.session_state.mostrar_imagem = True
         # Exibir gráficos em grid 2x2
         cols_per_row = 2
         for i in range(0, len(chart_files), cols_per_row):
@@ -1014,7 +1017,7 @@ if charts_dir_conv.exists():
                                 use_container_width=True,
                                 caption=chart_file.name
                             )
-                            st.session_state.mostrar_imagem = True
+                            
                             # Botão de download individual
                             with open(chart_file, "rb") as f:
                                 st.download_button(
@@ -1027,10 +1030,12 @@ if charts_dir_conv.exists():
                                 )
                         except Exception as e:
                             st.error(f"Erro ao carregar {chart_file.name}: {e}")
+
         if st.button("Limpar Imagem"):
             st.session_state.mostrar_imagem = False
-            st.session_state.clear()
             limpar_pngs(charts_dir_conv)
+            st.experimental_rerun()            
+            #st.session_state.clear()
 
     else:
         print("ℹ️ Nenhum gráfico disponível.")
