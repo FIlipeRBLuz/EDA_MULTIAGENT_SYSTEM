@@ -117,13 +117,13 @@ def create_eda_crew(csv_path, user_question):
     )
 
     patterns_task = Task(
-        description=f'Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis no arquivo CSV em {csv_path}. Para codigos avancados use execute_python_code.',
+        description=f'Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis no arquivo CSV em {csv_path}. Para codigos avancados use execute_python_code. ANALISE o resultado e apresente suas sugestoes e conclusoes',
         agent=pattern_detector,
         expected_output='Um relatório markdown completo com gráficos incorporados e análises estatísticas detalhadas para cada variável. Nao retornar codigo.'
     )
 
     outliers_task = Task(
-        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json',
+        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json. ANALISE o resultado e apresente suas sugestoes e conclusoes.',
         agent=anomaly_detector,
         expected_output='Um relatório markdown completo sobre outliers com gráficos incorporados, estatísticas detalhadas e interpretações.'
     )
@@ -135,13 +135,13 @@ def create_eda_crew(csv_path, user_question):
     )
 
     custom_chart_task = Task(
-        description=f'Use a ferramenta create_custom_chart para criar um gráfico personalizado baseado na pergunta do usuário: "{user_question}". Analise a solicitação e crie uma visualização apropriada usando os dados do arquivo {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json.',
+        description=f'Use a ferramenta create_custom_chart para criar um gráfico personalizado baseado na pergunta do usuário: "{user_question}". Analise a solicitação e crie uma visualização apropriada usando os dados do arquivo {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, salve sempre as imagens em /charts, a ferramenta recebera seu codigo python e retornara um json. Analise o resultado e apresente suas conclusoes e sugestoes',
         agent=custom_chart_agent,
         expected_output='Um relatório markdown com o gráfico personalizado criado e a explicação da visualização.'
     )
 
     conclusion_task = Task(
-        description=f'''Compile um relatório final completo e detalhado em markdown que integre TODOS os relatórios dos outros agentes. O relatório deve:
+        description=f'''Compile um relatório final completo e detalhado em markdown que integre TODOS os relatórios dos outros agentes. Garanta SEMPRE que o conteúdo produzido pelos demais agentes seja utilizado no relatorio final. O relatório deve:
         
         1. **Cabeçalho**: Título profissional e data da análise
         2. **Resumo Executivo**: Principais descobertas em formato executivo
@@ -169,7 +169,7 @@ def create_eda_crew(csv_path, user_question):
 
     # manager = Agent(
     # role="Project Manager",
-    # goal="Coordenar a equipe eficientemente acionando os agentes necessarios de acordo com a pergunta do cliente",
+    # goal="Coordenar a equipe eficientemente acionando os agentes necessarios de acordo com a pergunta do cliente. ",
     # backstory="Gerente experiente em projetos complexos de ciência de dados e data analytics",
     # allow_delegation=True,
     # reasoning=True
