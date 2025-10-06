@@ -969,6 +969,9 @@ if prompt := st.chat_input("Digite sua mensagem..."):
 
 # Área persistente para exibir graficso simples gerados pelo assistente de conversa
 st.divider()
+if "mostrar_imagem" not in st.session_state:
+    st.session_state.mostrar_imagem = False
+
 charts_dir_conv = Path("charts/conversa")
 if charts_dir_conv.exists():
     image_extensions = ['.png', '.jpg', '.jpeg', '.svg']
@@ -995,12 +998,13 @@ if charts_dir_conv.exists():
                     with col:
                         # Exibir imagem
                         try:
+
                             st.image(
                                 str(chart_file),
                                 use_container_width=True,
                                 caption=chart_file.name
                             )
-                            
+                            st.session_state.mostrar_imagem = True
                             # Botão de download individual
                             with open(chart_file, "rb") as f:
                                 st.download_button(
@@ -1013,6 +1017,9 @@ if charts_dir_conv.exists():
                                 )
                         except Exception as e:
                             st.error(f"Erro ao carregar {chart_file.name}: {e}")
+        if st.button("Limpar Imagem"):
+            st.session_state.mostrar_imagem = False
+
     else:
         st.info("ℹ️ Nenhum gráfico disponível.")
 else:
