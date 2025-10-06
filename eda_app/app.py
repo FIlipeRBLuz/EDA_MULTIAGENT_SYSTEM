@@ -966,15 +966,16 @@ if prompt := st.chat_input("Digite sua mensagem..."):
                 "role": "assistant", 
                 "content": response
             })
+
 # Área persistente para exibir graficso simples gerados pelo assistente de conversa
 st.divider()
-charts_dir = Path("charts/conversa")
-if charts_dir.exists():
+charts_dir_conv = Path("charts/conversa")
+if charts_dir_conv.exists():
     image_extensions = ['.png', '.jpg', '.jpeg', '.svg']
     chart_files = []
     
     for ext in image_extensions:
-        chart_files.extend(list(charts_dir.glob(f"*{ext}")))
+        chart_files.extend(list(charts_dir_conv.glob(f"*{ext}")))
     
     if chart_files:
         chart_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
@@ -1015,7 +1016,7 @@ if charts_dir.exists():
     else:
         st.info("ℹ️ Nenhum gráfico disponível.")
 else:
-    st.warning("⚠️ Diretório 'charts' não encontrado.")
+    st.warning("⚠️ Diretório 'charts/conversa' não encontrado.")
 
 
 
