@@ -111,19 +111,19 @@ def create_eda_crew(csv_path, user_question):
     # )
 
     describe_task = Task(
-        description=f'Use a ferramenta describe_data para analisar o arquivo CSV em {csv_path}. Forneça uma descrição completa dos dados.',
+        description=f'Use a ferramenta describe_data para analisar o arquivo CSV em {csv_path}. Forneça uma descrição completa dos dados. Caso necessite de mais informaçoes use a ferramenta execute_python_code',
         agent=data_describer,
         expected_output='Uma descrição detalhada em markdown dos tipos de dados, estatísticas e valores ausentes.'
     )
 
     patterns_task = Task(
-        description=f'Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados e análises detalhadas.',
+        description=f'Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis no arquivo CSV em {csv_path}. Para codigos avancados use execute_python_code.',
         agent=pattern_detector,
-        expected_output='Um relatório markdown completo com gráficos de distribuição incorporados e análises estatísticas detalhadas para cada variável.'
+        expected_output='Um relatório markdown completo com gráficos incorporados e análises estatísticas detalhadas para cada variável. Nao retornar codigo.'
     )
 
     outliers_task = Task(
-        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados.',
+        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json',
         agent=anomaly_detector,
         expected_output='Um relatório markdown completo sobre outliers com gráficos incorporados, estatísticas detalhadas e interpretações.'
     )
@@ -135,9 +135,9 @@ def create_eda_crew(csv_path, user_question):
     )
 
     custom_chart_task = Task(
-        description=f'Use a ferramenta create_custom_chart para criar um gráfico personalizado baseado na pergunta do usuário: "{user_question}". Analise a solicitação e crie uma visualização apropriada usando os dados do arquivo {csv_path}.',
+        description=f'Use a ferramenta create_custom_chart para criar um gráfico personalizado baseado na pergunta do usuário: "{user_question}". Analise a solicitação e crie uma visualização apropriada usando os dados do arquivo {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json.',
         agent=custom_chart_agent,
-        expected_output='Um relatório markdown com o gráfico personalizado criado, incluindo o código Python gerado e explicação da visualização.'
+        expected_output='Um relatório markdown com o gráfico personalizado criado e a explicação da visualização.'
     )
 
     conclusion_task = Task(
