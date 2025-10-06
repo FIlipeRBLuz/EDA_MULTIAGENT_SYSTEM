@@ -3,7 +3,7 @@ from crewai.llm import LLM
 from crewai.memory import LongTermMemory
 from crewai.memory.storage.ltm_sqlite_storage import LTMSQLiteStorage
 import os
-from ..tools.eda_tools import describe_data, plot_distributions, plot_correlations, detect_outliers, create_custom_chart
+from ..tools.eda_tools import describe_data, plot_distributions, plot_correlations, detect_outliers, create_custom_chart, execute_python_code
 from dotenv import load_dotenv
 import streamlit as st
 
@@ -63,7 +63,7 @@ custom_chart_agent = Agent(
     role='Especialista em Visualizações Personalizadas',
     goal='Criar gráficos personalizados baseados nas solicitações específicas do usuário.',
     backstory='Você é um especialista em visualização de dados que pode interpretar solicitações de gráficos e gerar código Python para criar visualizações customizadas.',
-    tools=[create_custom_chart],
+    tools=[create_custom_chart, execute_python_code],
     llm=llm,
     allow_delegation=False,
     verbose=True

@@ -4,7 +4,103 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import numpy as np
+import json
 import streamlit as st
+from pathlib import Path
+import tempfile
+import subprocess
+import sys
+
+
+
+@tool("execute_python_code")
+def execute_python_code(csv_filename: str, python_code: str) -> str:
+    """
+    Executa código Python para analisar dados do CSV.
+    Use esta ferramenta quando precisar fazer análises customizadas que não são cobertas por analyze_csv_data.
+    
+    Args:
+        csv_filename: Nome do arquivo CSV no diretório data/ (ex: 'dataset.csv')
+        python_code: Código Python a ser executado. O DataFrame estará disponível como 'df'.
+                    Exemplo: "print(df['coluna'].value_counts())"
+    
+    Returns:
+        Resultado da execução em formato JSON string
+    """
+    try:
+        # Construir o caminho completo do arquivo
+        data_dir = Path("data")
+        file_path = data_dir / csv_filename
+        
+        # Verificar se o arquivo existe
+        if not file_path.exists():
+            return json.dumps({
+                "success": False,
+                "error": f"Arquivo {csv_filename} não encontrado no diretório data/"
+            })
+        
+        # Criar código completo com importações e carregamento do CSV
+        full_code = f"""
+# -*- coding: utf-8 -*-
+import pandas as pd
+import numpy as np
+from pathlib import Path
+
+# Carregar o CSV
+file_path = Path("data") / "{csv_filename}"
+df = pd.read_csv(file_path)
+
+# Código do usuário
+{python_code}
+        """
+        
+        # Criar arquivo temporário
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
+            tmp.write(full_code)
+            tmp_path = tmp.name
+        
+        try:
+            # Executar código
+            proc = subprocess.Popen(
+                [sys.executable, tmp_path],
+                cwd=os.getcwd(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            stdout, stderr = proc.communicate(timeout=30)
+            exit_code = proc.returncode
+            
+            # Limpar arquivo temporário
+            os.remove(tmp_path)
+            
+            if exit_code == 0:
+                return json.dumps({
+                    "success": True,
+                    "output": stdout,
+                    "code_executed": python_code
+                })
+            else:
+                return json.dumps({
+                    "success": False,
+                    "error": stderr,
+                    "output": stdout
+                })
+                
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            os.remove(tmp_path)
+            return json.dumps({
+                "success": False,
+                "error": "Código demorou muito para executar (timeout de 30s)"
+            })
+            
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": f"Erro ao executar código: {str(e)}"
+        })
+
 
 @tool("describe_data")
 def describe_data(csv_path: str) -> str:

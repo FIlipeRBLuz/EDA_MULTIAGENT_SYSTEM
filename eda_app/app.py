@@ -1033,6 +1033,7 @@ if charts_dir_conv.exists():
                             st.error(f"Erro ao carregar {chart_file.name}: {e}")
         if st.button("Limpar Imagem"):
             st.session_state.mostrar_imagem = False
+            st.session_state.clear()
             limpar_pngs(charts_dir_conv)
 
     else:
