@@ -1034,7 +1034,7 @@ if charts_dir_conv.exists():
         if st.button("Limpar Imagem"):
             st.session_state.mostrar_imagem = False
             limpar_pngs(charts_dir_conv)
-            st.experimental_rerun()            
+            st.rerun()            
             #st.session_state.clear()
 
     else:
