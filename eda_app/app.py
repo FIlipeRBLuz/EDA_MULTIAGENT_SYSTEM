@@ -797,9 +797,9 @@ if prompt := st.chat_input("Digite sua mensagem..."):
         # Obter resposta do agente
         with st.chat_message("assistant"):
             # Verificar se vai acionar EDA (palavras-chave)
-            keywords = ["gráfico", "grafico", "visualiza", "plot", "boxplot", "histogram", 
-                       "heatmap", "scatter", "correlação", "correlacao", "mostre", "crie",
-                       "eda", "exploratória", "exploratoria", "completa", "análise visual"]
+            keywords = ["análise grafica", "analise grafica", "eda",
+                         "exploratória", "exploratoria", "completa",
+                         "análise visual", "análise"]
             
             will_run_eda = any(keyword in prompt.lower() for keyword in keywords)
             
@@ -1037,7 +1037,7 @@ if charts_dir_conv.exists():
             limpar_pngs(charts_dir_conv)
 
     else:
-        st.info("ℹ️ Nenhum gráfico disponível.")
+        print("ℹ️ Nenhum gráfico disponível.")
 else:
     Path("charts/conversa").mkdir(parents=True, exist_ok=True)
     #st.warning("⚠️ Diretório 'charts/conversa' não encontrado.")
