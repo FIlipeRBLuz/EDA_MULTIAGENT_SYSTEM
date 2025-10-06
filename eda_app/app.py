@@ -433,6 +433,19 @@ def run_eda_analysis(csv_filename: str, question: str) -> str:
             "error": f"Erro ao executar análise EDA: {str(e)}"
         })
 
+def limpar_pngs(diretorio):
+    if not os.path.isdir(diretorio):
+        print(f"Diretório não encontrado: {diretorio}")
+        return
+
+    arquivos_png = glob.glob(os.path.join(diretorio, "*.png"))
+    for arquivo in arquivos_png:
+        try:
+            os.remove(arquivo)
+            print(f"Removido: {arquivo}")
+        except Exception as e:
+            print(f"Erro ao remover {arquivo}: {e}")
+
 
 # Criar o agente conversacional
 agent = Agent(
@@ -1019,11 +1032,13 @@ if charts_dir_conv.exists():
                             st.error(f"Erro ao carregar {chart_file.name}: {e}")
         if st.button("Limpar Imagem"):
             st.session_state.mostrar_imagem = False
+            limpar_pngs(charts_dir_conv)
 
     else:
         st.info("ℹ️ Nenhum gráfico disponível.")
 else:
-    st.warning("⚠️ Diretório 'charts/conversa' não encontrado.")
+    charts_dir_conv.mkdir(exist_ok=True)
+    #st.warning("⚠️ Diretório 'charts/conversa' não encontrado.")
 
 
 
