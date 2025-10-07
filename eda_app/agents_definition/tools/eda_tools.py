@@ -64,8 +64,11 @@ def ensure_package_installed(package_name, import_name=None):
         print(f"✅ Instalação de '{{package_name}}' concluída.")
 
 #instalando libs
-ensure_package_installed("scikit-learn", "sklearn")
-ensure_package_installed("statsmodel")
+try:
+    ensure_package_installed("scikit-learn", "sklearn")
+    ensure_package_installed("statsmodel")
+except Exception as e:
+    print(str(e))
 
     
 # Carregar o CSV
