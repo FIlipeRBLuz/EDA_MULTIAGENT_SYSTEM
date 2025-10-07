@@ -53,7 +53,7 @@ relationship_analyzer = Agent(
     role='Analisador de Relações',
     goal='Analisar e visualizar as relações entre as variáveis.',
     backstory='Você é um especialista em modelagem de dados que entende como as variáveis interagem e influenciam umas às outras.',
-    tools=[plot_correlations],
+    tools=[plot_correlations, execute_python_code],
     llm=llm,
     allow_delegation=False,
     verbose=True
@@ -117,7 +117,10 @@ def create_eda_crew(csv_path, user_question):
     )
 
     patterns_task = Task(
-        description=f'Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis no arquivo CSV em {csv_path}. Para codigos avancados use execute_python_code. ANALISE o resultado e apresente suas sugestoes e conclusoes',
+        description=f"""Use a ferramenta plot_distributions para analisar e plotar as distribuições de todas as variáveis
+        no arquivo CSV em {csv_path}. Para codigos avancados use execute_python_code.
+        ANALISE o resultado e apresente suas sugestoes e conclusoes.
+        Salve todos seus graficos gerados em chart/""",
         agent=pattern_detector,
         expected_output='Um relatório markdown completo com gráficos incorporados e análises estatísticas detalhadas para cada variável. Nao retornar codigo.'
     )
