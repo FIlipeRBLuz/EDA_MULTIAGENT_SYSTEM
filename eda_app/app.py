@@ -1077,7 +1077,7 @@ if st.session_state.eda_markdown:
                 img_path = match.group(2)
                 
                 # Se for caminho relativo, converter para absoluto
-                if not img_path.startswith(('http://', 'https://', 'data:')):
+                if not img_path.startswith(('http://', 'https://', 'data:','/tmp/','file:///tmp/')):
                     # Remover prefixo charts/ se existir
                     img_filename = img_path.split('/')[-1]
                     full_path = charts_dir / img_filename
