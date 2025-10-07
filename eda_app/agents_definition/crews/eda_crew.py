@@ -123,7 +123,7 @@ def create_eda_crew(csv_path, user_question):
     )
 
     outliers_task = Task(
-        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, a ferramenta recebera seu codigo python e retornara um json. ANALISE o resultado e apresente suas sugestoes e conclusoes.',
+        description=f'Use a ferramenta detect_outliers para detectar e plotar outliers para todas as variáveis numéricas no arquivo CSV em {csv_path}. A ferramenta retornará um relatório markdown completo com gráficos incorporados. Para analises avancadas use execute_python_code, salve seus graficos sempre em /chart, a ferramenta recebera seu codigo python e retornara um json. ANALISE o resultado e apresente suas sugestoes e conclusoes.',
         agent=anomaly_detector,
         expected_output='Um relatório markdown completo sobre outliers com gráficos incorporados, estatísticas detalhadas e interpretações.'
     )
