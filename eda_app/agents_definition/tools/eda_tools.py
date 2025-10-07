@@ -10,7 +10,14 @@ from pathlib import Path
 import tempfile
 import subprocess
 import sys
+import warnings
 
+# Patch para compatibilidade Python < 3.12
+_original_warn = warnings.warn
+def _patched_warn(*args, **kwargs):
+    kwargs.pop("skip_file_prefixes", None)
+    return _original_warn(*args, **kwargs)
+warnings.warn = _patched_warn
 
 
 @tool("execute_python_code")
@@ -60,7 +67,7 @@ def ensure_package_installed(package_name, import_name=None):
         print(f"✅ Biblioteca '{{import_name}}' já está instalada.")
     except ImportError:
         print(f"📦 Instalando '{{package_name}}'...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "scikit-learn", "statsmodel"])
         print(f"✅ Instalação de '{{package_name}}' concluída.")
 
 #instalando libs
