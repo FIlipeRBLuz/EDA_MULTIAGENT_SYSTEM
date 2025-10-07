@@ -654,9 +654,9 @@ def chat_with_agent_sync(user_message: str, session_id: str = "default_session")
                     user_message,
                     session=session
                 )
-                return result.final_output + "\n\n⚠️ (Executando sem memória de conversa)"
+                return result.final_output + "\n\n (Executando sem memória de conversa)"
             except Exception as e2:
-                return f"❌ Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
+                return f"Erro ao processar: {str(e)}\n\nTentativa alternativa: {str(e2)}"
 
 col1, col2 = st.columns([1,10])  # Ajuste a proporção conforme necessário
 
@@ -705,7 +705,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Título
-# st.title("🧠 Einstein Data Scientist")
+
 st.markdown("*Converse com o agente sobre seus dados*")
 
 # Sidebar
@@ -1185,4 +1185,4 @@ if st.session_state.eda_markdown:
             st.warning("⚠️ Diretório 'charts' não encontrado.")
 
 st.divider()
-st.caption("🧠 Einstein Data Scientist - Powered by OpenAI Agents SDK")
+st.caption("Einstein Data Scientist - FL Insights")

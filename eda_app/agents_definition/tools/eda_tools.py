@@ -107,16 +107,16 @@ def describe_data(csv_path: str) -> str:
     """Descreve os dados em um arquivo CSV, incluindo tipos de dados, estatísticas e valores ausentes."""
     try:
         # Tentar diferentes separadores
-        separators = [',', ';', '\t', '|']
-        df = None
+        # separators = [',', ';', '\t', '|']
+        df = read_csv_robust(csv_path)
         
-        for sep in separators:
-            try:
-                df = pd.read_csv(csv_path, sep=sep)
-                if len(df.columns) > 1:  # Se conseguiu separar as colunas corretamente
-                    break
-            except:
-                continue
+        # for sep in separators:
+        #     try:
+        #         df = pd.read_csv(csv_path, sep=sep)
+        #         if len(df.columns) > 1:  # Se conseguiu separar as colunas corretamente
+        #             break
+        #     except:
+        #         continue
         
         if df is None:
             df = pd.read_csv(csv_path)  # Fallback para separador padrão
@@ -140,16 +140,16 @@ def plot_distributions(csv_path: str) -> str:
         separators = [',', ';', '\t', '|']
         df = None
         
-        for sep in separators:
-            try:
-                df = pd.read_csv(csv_path, sep=sep)
-                if len(df.columns) > 1:
-                    break
-            except:
-                continue
+        # for sep in separators:
+        #     try:
+        #         df = pd.read_csv(csv_path, sep=sep)
+        #         if len(df.columns) > 1:
+        #             break
+        #     except:
+        #         continue
         
         if df is None:
-            df = pd.read_csv(csv_path)
+            df = read_csv_robust(csv_path)
         
         charts_dir = 'charts'
         if not os.path.exists(charts_dir):
@@ -240,7 +240,7 @@ def plot_correlations(csv_path: str) -> str:
                 continue
         
         if df is None:
-            df = pd.read_csv(csv_path)
+            df = pd.read_csv_robust(csv_path)
         
         charts_dir = 'charts'
         numeric_df = df.select_dtypes(include=[np.number])
@@ -315,24 +315,32 @@ def detect_outliers(csv_path: str) -> str:
         separators = [',', ';', '\t', '|']
         df = None
         
-        for sep in separators:
-            try:
-                df = pd.read_csv(csv_path, sep=sep)
-                if len(df.columns) > 1:
-                    break
-            except:
-                continue
+        # for sep in separators:
+        #     try:
+        #         df = pd.read_csv(csv_path, sep=sep)
+        #         if len(df.columns) > 1:
+        #             break
+        #     except:
+        #         continue
         
         if df is None:
-            df = pd.read_csv(csv_path)
+            df = read_csv_robust(csv_path)
+        else:
+            for sep in separators:
+                try:
+                    df = pd.read_csv(csv_path, sep=sep)
+                    if len(df.columns) > 1:
+                        break
+                except:
+                    continue
         
         charts_dir = 'charts'
         numeric_df = df.select_dtypes(include=[np.number])
         
         if len(numeric_df.columns) == 0:
-            return "## 🚨 Detecção de Outliers\n\nNão há variáveis numéricas para detecção de outliers."
+            return "## Detecção de Outliers\n\nNão há variáveis numéricas para detecção de outliers."
         
-        markdown_report = "## 🚨 Detecção de Outliers\n\n"
+        markdown_report = "## Detecção de Outliers\n\n"
         total_outliers = 0
         
         for col in numeric_df.columns:
@@ -379,11 +387,11 @@ def detect_outliers(csv_path: str) -> str:
             
             # Interpretação
             if outlier_percentage > 10:
-                markdown_report += f"- **Interpretação:** ⚠️ Alto número de outliers - investigar possíveis erros nos dados\n"
+                markdown_report += f"- **Interpretação:** Alto número de outliers - investigar possíveis erros nos dados\n"
             elif outlier_percentage > 5:
-                markdown_report += f"- **Interpretação:** ⚡ Número moderado de outliers - analisar se são valores legítimos\n"
+                markdown_report += f"- **Interpretação:** Número moderado de outliers - analisar se são valores legítimos\n"
             else:
-                markdown_report += f"- **Interpretação:** ✅ Poucos outliers - distribuição relativamente normal\n"
+                markdown_report += f"- **Interpretação:** Poucos outliers - distribuição relativamente normal\n"
             
             if outlier_count > 0:
                 markdown_report += f"- **Valores extremos:** Min: {outliers.min():.2f}, Max: {outliers.max():.2f}\n"
@@ -391,7 +399,7 @@ def detect_outliers(csv_path: str) -> str:
             markdown_report += "\n---\n\n"
         
         # Resumo geral
-        markdown_report += f"### 📊 Resumo Geral de Outliers\n\n"
+        markdown_report += f"### Resumo Geral de Outliers\n\n"
         markdown_report += f"- **Total de outliers:** {total_outliers}\n"
         markdown_report += f"- **Variáveis analisadas:** {len(numeric_df.columns)}\n"
         markdown_report += f"- **Percentual geral:** {(total_outliers / (len(df) * len(numeric_df.columns))) * 100:.1f}% dos valores\n\n"
@@ -406,7 +414,7 @@ def detect_outliers(csv_path: str) -> str:
         return f"Erro ao detectar outliers: {str(e)}"
 
 @tool("create_custom_chart")
-def create_custom_chart(csv_path: str, chart_request: str) -> str:
+def create_custom_chart(csv_path: str, chart_request: str, chart_name: str) -> str:
     """Cria um gráfico personalizado baseado na solicitação do usuário."""
     try:
         # Tentar diferentes separadores
@@ -429,7 +437,7 @@ def create_custom_chart(csv_path: str, chart_request: str) -> str:
             os.makedirs(charts_dir)
 
         # Analisar a solicitação e gerar código Python
-        chart_code = generate_chart_code(df, chart_request)
+        chart_code = generate_chart_code(df, chart_request, chart_name)
         
         # Executar o código gerado
         exec_globals = {
@@ -446,7 +454,7 @@ def create_custom_chart(csv_path: str, chart_request: str) -> str:
         # Criar relatório markdown
         markdown_report = f"## 🎨 Gráfico Personalizado\n\n"
         markdown_report += f"**Solicitação:** {chart_request}\n\n"
-        markdown_report += f"![Gráfico Personalizado](charts/custom_chart.png)\n\n"
+        markdown_report += f"![Gráfico Personalizado](charts/{chart_name}.png)\n\n"
         markdown_report += f"### 💻 Código Python Gerado\n\n"
         markdown_report += f"```python\n{chart_code}\n```\n\n"
         
@@ -455,7 +463,7 @@ def create_custom_chart(csv_path: str, chart_request: str) -> str:
     except Exception as e:
         return f"Erro ao criar gráfico personalizado: {str(e)}"
 
-def generate_chart_code(df, request):
+def generate_chart_code(df, request, chart_name):
     """Gera código Python para criar gráficos baseado na solicitação do usuário."""
     
     # Analisar colunas disponíveis
@@ -485,7 +493,7 @@ plt.ylabel('{col2}')
 plt.title('Gráfico de Dispersão: {col1} vs {col2}')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -509,7 +517,7 @@ plt.ylabel('Frequência')
 plt.title('Gráfico de Barras: {col}')
 plt.xticks(range(len(value_counts)), value_counts.index, rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -532,7 +540,7 @@ plt.ylabel('{col}')
 plt.title('Gráfico de Linha: {col}')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -554,7 +562,7 @@ plt.pie(value_counts.values, labels=value_counts.index, autopct='%1.1f%%', start
 plt.title('Gráfico de Pizza: {col}')
 plt.axis('equal')
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -576,7 +584,7 @@ plt.ylabel('{col}')
 plt.title('Boxplot: {col}')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -599,7 +607,7 @@ plt.ylabel('Frequência')
 plt.title('Histograma: {col}')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -619,7 +627,7 @@ plt.ylabel('Média de {num_col}')
 plt.title('Gráfico Personalizado: Média de {num_col} por {cat_col}')
 plt.xticks(range(len(df_grouped)), df_grouped.index, rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         elif numeric_cols:
@@ -632,7 +640,7 @@ plt.ylabel('Frequência')
 plt.title('Histograma: {col}')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(f'{{charts_dir}}/custom_chart.png', dpi=300, bbox_inches='tight')
+plt.savefig(f'{{charts_dir}}/{chart_name}.png', dpi=300, bbox_inches='tight')
 plt.close()
 """
         else:
@@ -664,3 +672,62 @@ def run_eda_analysis(file_path, question):
             "success": False,
             "error": f"Erro ao executar análise EDA: {str(e)}"
         }
+
+def detect_csv_separator(file_path):
+    """Detecta automaticamente o separador de um arquivo CSV"""
+    import csv
+    
+    # Lista de separadores comuns para testar
+    separators = [',', ';', '\t', '|', ':', ' ']
+    
+    with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+        # Ler as primeiras linhas para análise
+        sample = file.read(1024)
+        file.seek(0)
+        
+        # Usar o Sniffer do CSV para detectar o separador
+        try:
+            sniffer = csv.Sniffer()
+            delimiter = sniffer.sniff(sample, delimiters=',;\t|: ').delimiter
+            return delimiter
+        except:
+            # Se o Sniffer falhar, testar manualmente
+            first_line = file.readline()
+            
+            # Contar ocorrências de cada separador
+            separator_counts = {}
+            for sep in separators:
+                separator_counts[sep] = first_line.count(sep)
+            
+            # Retornar o separador mais comum (que não seja espaço se houver outros)
+            most_common = max(separator_counts.items(), key=lambda x: x[1])
+            if most_common[1] > 0:
+                return most_common[0]
+            else:
+                return ','  # Default para vírgula
+
+def read_csv_robust(file_path):
+    """Lê um arquivo CSV de forma robusta, detectando automaticamente o separador"""
+    try:
+        # Detectar o separador
+        separator = detect_csv_separator(file_path)
+        
+        # Tentar diferentes encodings
+        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+        
+        for encoding in encodings:
+            try:
+                df = pd.read_csv(file_path, sep=separator, encoding=encoding)
+                # Verificar se a leitura foi bem-sucedida (mais de 1 coluna)
+                if len(df.columns) > 1:
+                    return df
+            except:
+                continue
+        
+        # Se tudo falhar, tentar com parâmetros padrão
+        df = pd.read_csv(file_path)
+        return df
+        
+    except Exception as e:
+        st.error(f"Erro ao ler o arquivo CSV: {str(e)}")
+        return None, None, None
