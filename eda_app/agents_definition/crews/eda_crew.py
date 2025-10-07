@@ -167,15 +167,14 @@ def create_eda_crew(csv_path, user_question):
         expected_output='Um relatório final completo em markdown que incorpora TODOS os relatórios dos agentes com gráficos incluídos, formatado profissionalmente.'
     )
 
-    # manager = Agent(
-    # role="Project Manager",
-    # goal="Coordenar a equipe eficientemente acionando os agentes necessarios de acordo com a pergunta do cliente. ",
-    # backstory="Gerente experiente em projetos complexos de ciência de dados e data analytics",
-    # allow_delegation=True,
-    # reasoning=True
-    # )
-
-
+    manager = Agent(
+    role="Project Manager",
+    goal="Validar o output criado pelos agentes.",
+    backstory="Gerente experiente em projetos complexos de ciência de dados e data analytics, com ampla experiencia em analise exploratoria de dados, detalhista e exigente com a qualidade do trabalho.",
+    allow_delegation=True,
+    reasoning=True
+    )
+    
     # Crew
     eda_crew = Crew(
         agents=[data_describer, pattern_detector, anomaly_detector, relationship_analyzer, custom_chart_agent, conclusion_agent],
@@ -185,7 +184,7 @@ def create_eda_crew(csv_path, user_question):
         memory=True,
         planning=False,
         planning_llm='gpt-4o',
-        #manager_agent=manager,
+        manager_agent=manager,
         long_term_memory=LongTermMemory(
         storage=LTMSQLiteStorage(
             db_path=f"{custom_storage_path}/memory.db"
