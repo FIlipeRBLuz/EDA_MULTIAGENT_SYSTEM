@@ -48,16 +48,25 @@ import subprocess
 import sys
 from pathlib import Path
 
+import importlib
+import subprocess
+import sys
 
-try:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
-except subprocess.CalledProcessError as e:
-    print(f"Erro ao instalar scikit-learn: {{e}}")
-    
-try:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "statsmodels"])
-except subprocess.CalledProcessError as e:
-    print(f"Erro ao instalar scikit-learn: {{e}}")
+def ensure_package_installed(package_name, import_name=None):
+
+    import_name = import_name or package_name
+    try:
+        importlib.import_module(import_name)
+        print(f"✅ Biblioteca '{{import_name}}' já está instalada.")
+    except ImportError:
+        print(f"📦 Instalando '{{package_name}}'...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+        print(f"✅ Instalação de '{{package_name}}' concluída.")
+
+#instalando libs
+ensure_package_installed("scikit-learn", "sklearn")
+ensure_package_installed("statsmodel")
+
     
 # Carregar o CSV
 file_path = Path("data") / "{csv_filename}"
