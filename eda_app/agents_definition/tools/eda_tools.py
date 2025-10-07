@@ -46,6 +46,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+try:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn"])
+except subprocess.CalledProcessError as e:
+    print(f"Erro ao instalar scikit-learn: {{e}}")
+    
 # Carregar o CSV
 file_path = Path("data") / "{csv_filename}"
 df = pd.read_csv(file_path)
